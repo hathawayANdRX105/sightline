@@ -1,0 +1,103 @@
+# Sightline CI — 构建与全部测试统一在 GitHub CI 上跑（不在本地编译）。
+#
+# 顺序是硬约束：http.rs 用 include_str! 嵌入 sdk/dist/sdk.js，
+# 所以必须先 npm run build，再 cargo build。
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  core:
+    name: SDK + Rust + 全部测试套件
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Rust toolchain (stable ≥ 1.85, edition 2024)
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Cache cargo registry & build
+        uses: Swatinem/rust-cache@v2
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: sdk/package-lock.json
+
+      - name: SDK — install / typecheck / build
+        working-directory: sdk
+        run: |
+          npm ci
+          npm run typecheck
+          npm run build
+
+      - name: cargo test（schema / store 单测）
+        run: cargo test
+
+      - name: cargo build --release（嵌入 sdk.js）
+        run: cargo build --release
+
+      - name: 黑盒测试（jsdom / selector / HTTP e2e / MCP e2e）
+        working-directory: sdk
+        run: npm test
+
+      - name: 上传 release 二进制
+        uses: actions/upload-artifact@v4
+        with:
+          name: sightline-linux-x86_64
+          path: target/release/sightline
+          if-no-files-found: error
+          retention-days: 14
+
+  demo:
+    name: Leptos demo (wasm)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Rust toolchain + wasm32 target
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: wasm32-unknown-unknown
+
+      - name: Cache cargo (demo workspace)
+        uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: demo/leptos-demo
+
+      # wasm-bindgen-cli 必须与 demo Cargo.lock 里的 wasm-bindgen crate 同版本
+      - name: Install wasm-bindgen-cli (pinned to demo Cargo.lock)
+        run: |
+          WB_VERSION=$(grep -A1 '^name = "wasm-bindgen"$' demo/leptos-demo/Cargo.lock | grep -oP '(?<=version = ")[^"]+' | head -1)
+          echo "wasm-bindgen-cli $WB_VERSION"
+          cargo install wasm-bindgen-cli --version "$WB_VERSION" --locked
+
+      - name: Build wasm + generate JS module
+        working-directory: demo/leptos-demo
+        run: |
+          cargo build --target wasm32-unknown-unknown --release
+          wasm-bindgen \
+            --target web \
+            --no-typescript \
+            --out-dir dist \
+            --out-name leptos_demo \
+            target/wasm32-unknown-unknown/release/leptos_demo.wasm
+          cp index.html styles.css dist/
+
+      - name: Check dist outputs
+        working-directory: demo/leptos-demo
+        run: |
+          test -s dist/leptos_demo.js
+          test -s dist/leptos_demo_bg.wasm
+          test -s dist/index.html
+          echo "demo dist OK:"
+          ls -la dist/
