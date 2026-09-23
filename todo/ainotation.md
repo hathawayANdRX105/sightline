@@ -11,7 +11,7 @@
 |---|---|---|---|
 | 反馈 schema | document→annotations→targets: selector/ancestors/text/nearbyText/attributes/rect/styles | **核心借鉴**: serde 定义 → specta 导出 TS 类型（单一事实源） | ⬜ MVP |
 | selector 质量 | 验证过的 CSS selector（testid→语义属性→祖先域→位置回退，256 候选上限） | 照抄策略（简化到 testid→id→class→位置） | ⬜ MVP |
-| MCP 工具面 | 14 个工具（list/get/create/update/delete + variants） | 先只读 3 个: `list_feedback` / `get_feedback` / `get_image`（rmcp） | ⬜ MVP |
+| MCP 工具面 | 14 个工具（list/get/create/update/delete + variants） | 先只读 3 个: `sightline_list_feedback` / `sightline_get_feedback` / `sightline_get_image`（rmcp） | ⬜ MVP |
 | 本地 service + grant 租约 | control API + 5 分钟租约 + 续租循环 | **简化**: localhost 一次性 token，无租约（我们不需要多宿主） | ✅ 设计确立 |
 | 样式试调（原值/期望值 targetStyles） | 面板改 CSS，原值期望值随反馈保存 | 排期（差异化亮点） | ⬜ 排期 |
 | 截图 + 页面画图 | 原生屏捕 + 画布标注 + 裁剪 | 排期（先用 DisplayMedia 最小路径） | ⬜ 排期 |
