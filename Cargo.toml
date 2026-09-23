@@ -1,0 +1,67 @@
+# Sightline — local MCP sidecar for visual web feedback
+#
+# 单二进制 MCP sidecar：让任何 AI agent 通过 MCP 读到开发者对运行中
+# 网页的视觉标注反馈。框架无关、零运行时依赖、不绑定 dev server。
+#
+# 总体设计见 docs/architecture.md。
+
+[package]
+name = "sightline"
+version = "0.1.0"
+edition = "2024"
+rust-version = "1.85"
+license = "MIT"
+repository = "https://github.com/hathawayANdRX105/sightline"
+homepage = "https://github.com/hathawayANdRX105/sightline"
+description = "Local MCP sidecar that exposes developer feedback about running web pages to AI agents"
+
+[lib]
+path = "src/lib.rs"
+
+[[bin]]
+name = "sightline"
+path = "src/main.rs"
+
+[dependencies]
+# 异步运行时
+tokio = { version = "1", features = ["full"] }
+
+# 序列化 / schema 单一事实源（serde + JsonSchema + specta 三派生同一 struct）
+serde           = { version = "1", features = ["derive"] }
+serde_json      = "1"
+schemars        = { version = "1", features = ["chrono04"] }
+specta          = { version = "1", features = ["uuid", "chrono"] }
+specta-typescript = "0.0.12"
+
+# MCP server 层（官方 Rust SDK，Tier 1 维护级别，2026-09 调研 v3.4.0）
+rmcp = { version = "3", features = ["server", "macros", "transport-io", "schemars"] }
+
+# HTTP sidecar（axum 0.8 + tower）
+axum   = { version = "0.8", features = ["json", "tokio"] }
+tower  = "0.5"
+tower-http = { version = "0.6", features = ["cors", "fs"] }
+
+# 数据契约常用类型
+uuid    = { version = "1", features = ["v4", "serde"] }
+chrono  = { version = "0.4", features = ["serde"] }
+
+# 错误处理
+anyhow     = "1"
+thiserror  = "2"
+
+# 日志
+tracing            = "0.1"
+tracing-subscriber = { version = "0.3", features = ["env-filter"] }
+
+# 配置 / CLI
+clap = { version = "4", features = ["derive", "env"] }
+
+# main 里用到的 futures 工具
+futures = "0.3"
+
+[profile.release]
+opt-level = 3
+lto = "thin"
+codegen-units = 1
+strip = "symbols"
+# 单二进制体积目标 < 10MB（见 docs/architecture.md §10.4）
