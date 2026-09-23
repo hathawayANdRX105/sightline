@@ -1,1 +1,6 @@
 ref/
+target/
+node_modules/
+.codegraph/
+sdk/dist/
+demo/leptos-demo/dist/
