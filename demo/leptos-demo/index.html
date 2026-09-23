@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Leptos × Sightline Demo</title>
+    <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+    <div id="loading">Loading wasm…</div>
+    <script type="module">
+        import init from "./leptos_demo.js";
+        await init();
+        document.getElementById("loading")?.remove();
+    </script>
+    <!--
+        自动加载并启动 Sightline SDK——demo 页打开即可标注，无需任何控制台操作。
+        src 跨域来自 http://127.0.0.1:9420/sdk.js；SDK 内部会调用 bootstrap 建立 session。
+    -->
+    <script src="http://127.0.0.1:9420/sdk.js" defer></script>
+    <script>
+        window.addEventListener("DOMContentLoaded", () => {
+            // 等到 Sightline 注入完毕（SDK 加载是 defer 的，会在 DOMContentLoaded 之前完成；
+            // 但用轮询容错一下加载延迟）。
+            const tryStart = () => {
+                if (window.Sightline) {
+                    window.Sightline.start().then(doc => {
+                        console.log("[demo] sightline ready, sessionId =", doc.sessionId, "version =", doc.version, "— 按 Alt+Shift+A 进入批注模式");
+                    }).catch(err => {
+                        console.error("[demo] sightline start failed:", err);
+                    });
+                } else {
+                    setTimeout(tryStart, 50);
+                }
+            };
+            tryStart();
+        });
+    </script>
+</body>
+</html>
