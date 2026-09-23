@@ -1,0 +1,20 @@
+{
+  "name": "sightline-sdk",
+  "private": true,
+  "version": "0.1.0",
+  "description": "Browser-side SDK for Sightline. Zero runtime dependencies, native DOM APIs only.",
+  "type": "module",
+  "main": "src/index.ts",
+  "scripts": {
+    "build": "esbuild src/index.ts --bundle --format=iife --global-name=Sightline --minify-whitespace --minify-identifiers --outfile=dist/sdk.js",
+    "dev": "esbuild src/index.ts --bundle --format=iife --global-name=Sightline --outfile=dist/sdk.js --sourcemap --watch",
+    "typecheck": "tsc --noEmit",
+    "test": "node test/sdk-bootstrap.mjs && node test/selector.smoke.mjs && node test/e2e.mjs && node test/mcp.mjs"
+  },
+  "devDependencies": {
+    "esbuild": "^0.25.0",
+    "jsdom": "^30.1.1",
+    "tsx": "^4.23.15",
+    "typescript": "^5.6.0"
+  }
+}
